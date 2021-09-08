@@ -13,9 +13,6 @@ frc
 import math
 import numpy as np
 from skimage import draw
-import random
-
-from .patch import Patch
 
 
 def frc(image1, image2, resolution=1):
@@ -38,27 +35,27 @@ def frc(image1, image2, resolution=1):
     fft1 = np.fft.fftshift(np.fft.fft2(image1))
     fft2 = np.fft.fftshift(np.fft.fft2(image2))
 
-    sx = fft1.shape[0]
-    sy = fft1.shape[1]
-    r_max = min(int(sx / 2), int(sy / 2))
+    s_x = fft1.shape[0]
+    s_y = fft1.shape[1]
+    r_max = min(int(s_x / 2), int(s_y / 2))
     curve_ = np.zeros(r_max - 1)
     curve_[0] = 1
     frequencies_ = np.zeros(r_max - 1)
     frequencies_[0] = 0
     metric_ = None
-    for r in range(1, r_max - 1):
-        rr, cc = draw.circle_perimeter(int(sx / 2), int(sy / 2), r)
-        p1 = fft1[rr, cc]
-        p2 = fft2[rr, cc]
+    for radius in range(1, r_max - 1):
+        r_r, c_c = draw.circle_perimeter(int(s_x / 2), int(s_y / 2), radius)
+        p_1 = fft1[r_r, c_c]
+        p_2 = fft2[r_r, c_c]
 
-        num = np.abs(np.sum(p1 * np.conjugate(p2)))
-        den = np.sum(np.square(np.abs(p1))) * np.sum(np.square(np.abs(p2)))
+        num = np.abs(np.sum(p_1 * np.conjugate(p_2)))
+        den = np.sum(np.square(np.abs(p_1))) * np.sum(np.square(np.abs(p_2)))
 
-        curve_[r] = num / math.sqrt(den)
-        frequencies_[r] = float(r * resolution)
+        curve_[radius] = num / math.sqrt(den)
+        frequencies_[radius] = float(radius * resolution)
 
-        if curve_[r] < 1.0 / 7.0 and not metric_:
-            metric_ = frequencies_[r]
+        if curve_[radius] < 1.0 / 7.0 and not metric_:
+            metric_ = frequencies_[radius]
     return curve_, frequencies_, metric_
 
 
@@ -103,6 +100,7 @@ class FRC:
         self.frequencies_ = None
 
     def run(self):
+        """Do the calculation"""
         if self.image1.shape[0] != self.image2.shape[0] or \
                 self.image2.shape[0] != self.image2.shape[0]:
             raise Exception("FRC: image1 and image2 must have the same shape")
@@ -113,16 +111,18 @@ class FRC:
                 frc(self.image1, self.image2, self.resolution)
         else:
             # run on patches
-            self.curve_ = np.zeros(self.radius-1)
-            self.curves_ = np.zeros((len(self.patches), self.radius-1))
+            self.curve_ = np.zeros(self.radius - 1)
+            self.curves_ = np.zeros((len(self.patches), self.radius - 1))
             i = -1
             for patch in self.patches:
-                x1 = patch[0] - self.radius
-                x2 = patch[0] + self.radius
-                y1 = patch[1] - self.radius
-                y2 = patch[1] + self.radius
-                (curve, self.frequencies_, _) = frc(self.image1[x1:x2, y1:y2],
-                                                    self.image2[x1:x2, y1:y2],
+                x_1 = patch[0] - self.radius
+                x_2 = patch[0] + self.radius
+                y_1 = patch[1] - self.radius
+                y_2 = patch[1] + self.radius
+                (curve, self.frequencies_, _) = frc(self.image1[x_1:x_2,
+                                                    y_1:y_2],
+                                                    self.image2[x_1:x_2,
+                                                    y_1:y_2],
                                                     self.resolution)
                 i += 1
                 self.curves_[i, :] = curve
@@ -160,41 +160,59 @@ class FSC:
         self.frequencies_ = None
 
     def run(self):
+        """Do the calculation"""
         fft1 = np.fft.fftshift(np.fft.fftn(self.image1))
         fft2 = np.fft.fftshift(np.fft.fftn(self.image2))
-        sx = fft1.shape[0]
-        sy = fft1.shape[1]
-        sz = fft1.shape[2]
-        r_max = min(int(sx / 2), int(sy / 2), int(sz / 2))
+        s_x = fft1.shape[0]
+        s_y = fft1.shape[1]
+        s_z = fft1.shape[2]
+        r_max = min(int(s_x / 2), int(s_y / 2), int(s_z / 2))
         self.metric_ = np.zeros(r_max - 1)
         self.metric_[0] = 1
         self.frequencies_ = np.zeros(r_max - 1)
         self.frequencies_[0] = 0
-        for r in range(1, r_max - 1):
-            xx, yy, zz = calculate_sphere_border(int(sx / 2), int(sy / 2),
-                                                 int(sz / 2), r)
-            p1 = fft1[xx, yy, zz]
-            p2 = fft2[xx, yy, zz]
+        for radius in range(1, r_max - 1):
+            x_x, y_y, z_z = calculate_sphere_border(int(s_x / 2),
+                                                   int(s_y / 2),
+                                                   int(s_z / 2),
+                                                   radius)
+            p_1 = fft1[x_x, y_y, z_z]
+            p_2 = fft2[x_x, y_y, z_z]
 
-            num = np.abs(np.sum(p1 * np.conjugate(p2)))
-            den = np.sum(np.square(np.abs(p1))) * np.sum(np.square(np.abs(p2)))
+            num = np.abs(np.sum(p_1 * np.conjugate(p_2)))
+            den = np.sum(np.square(np.abs(p_1))) * \
+                  np.sum(np.square(np.abs(p_2)))
 
-            self.metric_[r] = num / math.sqrt(den)
-            self.frequencies_ = float(1 / r)
+            self.metric_[radius] = num / math.sqrt(den)
+            self.frequencies_ = float(1 / radius)
 
 
-def calculate_sphere_border(cx: int, cy: int, cz: int, r: int):
-    px = []
-    py = []
-    pz = []
-    r1 = pow(r - 1, 2)
-    r2 = pow(r, 2)
-    for x in range(cx - r, cx + r + 1):
-        for y in range(cy - r, cy + r + 1):
-            for z in range(cz - r, cz + r + 1):
-                euclid = pow(x - cx, 2) + pow(y - cy, 2) + pow(z - cz, 2)
-                if r1 < euclid <= r2:
-                    px.append(x)
-                    py.append(y)
-                    pz.append(z)
-    return px, py, pz
+def calculate_sphere_border(c_x: int, c_y: int, c_z: int, radius: int):
+    """Calculate the coordinates of the points in the border of a sphere
+
+    Parameters
+    ----------
+    c_x: int
+        X position of the sphere center
+    c_y: int
+        Y position of the sphere center
+    c_z: int
+        Z position of the sphere center
+    radius: int
+        Radius of the sphere (in pixels)
+
+    """
+    p_x = []
+    p_y = []
+    p_z = []
+    r_1 = pow(radius - 1, 2)
+    r_2 = pow(radius, 2)
+    for x in range(c_x - radius, c_x + radius + 1):
+        for y in range(c_y - radius, c_y + radius + 1):
+            for z in range(c_z - radius, c_z + radius + 1):
+                euclid = pow(x - c_x, 2) + pow(y - c_y, 2) + pow(z - c_z, 2)
+                if r_1 < euclid <= r_2:
+                    p_x.append(x)
+                    p_y.append(y)
+                    p_z.append(z)
+    return p_x, p_y, p_z

@@ -1,11 +1,10 @@
-"""Helpers to check build environment before build of scikit-bioimaging"""
+"""Helpers to check build environment before build of smetrics"""
 
 import os
 import sys
 import glob
 import tempfile
 import textwrap
-import setuptools  # noqa
 import subprocess
 
 from distutils.dist import Distribution
@@ -15,7 +14,7 @@ from numpy.distutils.command.config_compiler import config_cc
 
 
 def _get_compiler():
-    """Get a compiler equivalent to the one to build skbioimaging
+    """Get a compiler equivalent to the one to build smetrics
 
     Handles compiler specified as follows:
         - python setup.py build_ext --compiler=<compiler>
@@ -39,7 +38,7 @@ def _get_compiler():
     return ccompiler
 
 
-def compile_test_program(code, extra_preargs=[], extra_postargs=[]):
+def compile_test_program(code, extra_preargs=None, extra_postargs=None):
     """Check that some C code can be compiled and run"""
     ccompiler = _get_compiler()
 
@@ -57,8 +56,8 @@ def compile_test_program(code, extra_preargs=[], extra_postargs=[]):
             os.chdir(tmp_dir)
 
             # Write test program
-            with open('test_program.c', 'w') as f:
-                f.write(code)
+            with open('test_program.c', 'w') as file:
+                file.write(code)
 
             os.mkdir('objects')
 
@@ -77,8 +76,8 @@ def compile_test_program(code, extra_preargs=[], extra_postargs=[]):
             # will raise a CalledProcessError if return code was non-zero
             output = subprocess.check_output('./test_program')
             output = output.decode(sys.stdout.encoding or 'utf-8').splitlines()
-        except Exception:
-            raise
+        except Exception as error:
+            raise Exception("Unable to create cpp temp directory") from error
         finally:
             os.chdir(start_dir)
 

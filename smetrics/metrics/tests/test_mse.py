@@ -1,3 +1,4 @@
+"""Unit testing the MSE metric."""
 import pytest
 
 from smetrics import data
@@ -5,6 +6,7 @@ from smetrics.metrics.mse import MSE, NRMSE
 
 
 def test_mse_pollen():
+    """Test MSE on pollen 3D image"""
     image1 = data.pollen()
     image2 = data.pollen_poison_noise_blurred()
 
@@ -16,6 +18,7 @@ def test_mse_pollen():
 
 
 def test_nrmse_pollen():
+    """Test NRMSE on pollen 3D image"""
     image1 = data.pollen()
     image2 = data.pollen_poison_noise_blurred()
 

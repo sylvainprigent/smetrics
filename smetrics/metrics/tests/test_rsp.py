@@ -1,3 +1,4 @@
+"""Unit testing the RSP metric."""
 import pytest
 
 from smetrics import data
@@ -5,6 +6,7 @@ from smetrics.metrics.rsp import RSP
 
 
 def test_rsp_pollen():
+    """Test MSE on pollen 3D image"""
     image1 = data.pollen()
     image2 = data.pollen_poison_noise_blurred()
 

@@ -1,16 +1,20 @@
 #!/usr/bin/env python
+"""Setup the metrics module
+
+"""
 
 import os
 import sys
+from numpy.distutils.core import setup
+from numpy.distutils.misc_util import Configuration
+from smetrics._build_utils import cythonize_extensions
 
 base_path = os.path.abspath(os.path.dirname(__file__))
 
-from restorationpy._build_utils import cythonize_extensions
-
 
 def configuration(parent_package='', top_path=None):
-    from numpy.distutils.misc_util import Configuration
-    import numpy
+    """Configuration of the module"""
+
 
     libraries = []
     if os.name == 'posix':
@@ -36,5 +40,4 @@ def configuration(parent_package='', top_path=None):
 
 
 if __name__ == '__main__':
-    from numpy.distutils.core import setup
     setup(**configuration(top_path='').todict())

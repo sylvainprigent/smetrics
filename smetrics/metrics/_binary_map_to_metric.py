@@ -1,11 +1,35 @@
+# -*- coding: utf-8 -*-
+"""Algorithms to estimate a image quality metric from an error map
+
+Classes
+-------
+ClusterMapMetric
+AreaPerimeterMetric
+PercentageAreaMetric
+IsingMetric
+
+"""
+
+import math
 import numpy as np
 from scipy.ndimage import convolve
 from skimage.morphology import binary_erosion
-import math
 
 
 class ClusterMapMetric:
     """Calculate a metric from a binary map using the number of neighbors
+
+    Parameters
+    ----------
+    threshold: float
+        Neighbor count to identify clustered pixel
+
+    Attributes
+    ----------
+    metric_: float
+        Obtained metric
+    count_map_: ndarray
+        cluster map (this is a intermediate variable)
 
     """
 
@@ -15,6 +39,7 @@ class ClusterMapMetric:
         self.count_map_ = None
 
     def run(self, detection_map):
+        """Do the calculation"""
         kernel = np.ones((3, 3))
         kernel[1, 1] = 0
         self.count_map_ = convolve(detection_map, kernel) * detection_map
@@ -26,6 +51,15 @@ class ClusterMapMetric:
 class AreaPerimeterMetric:
     """Calculate the ratio area/perimeter
 
+    Attributes
+    ----------
+    area_: float
+        Measured area
+    perimeter_: float
+        Measured parameter
+    metric_: float
+        Obtained metric
+
     """
 
     def __init__(self):
@@ -34,6 +68,7 @@ class AreaPerimeterMetric:
         self.metric_ = None
 
     def run(self, detection_map):
+        """Do the calculation"""
         self.area_ = np.sum(detection_map == 1)
         contour = detection_map - binary_erosion(detection_map)
         self.perimeter_ = np.sum(contour == 1)
@@ -46,6 +81,13 @@ class PercentageAreaMetric:
 
     N is image size
 
+    Attributes
+    ----------
+    area_: float
+        Measured area
+    metric_: float
+        Obtained metric
+
     """
 
     def __init__(self):
@@ -53,6 +95,7 @@ class PercentageAreaMetric:
         self.metric_ = None
 
     def run(self, detection_map):
+        """Do the calculation"""
         self.area_ = np.sum(detection_map == 1)
         self.metric_ = self.area_ / detection_map.size
         return self.metric_
@@ -61,6 +104,15 @@ class PercentageAreaMetric:
 class IsingMetric:
     """Calculate the Ising MRF binary Energy
 
+    Parameters
+    ----------
+    weight: int
+        Ising model weight (beta parameter)
+
+    Attributes
+    ----------
+    metric_: float
+        Obtained metric
     """
 
     def __init__(self, weight=1):
@@ -68,18 +120,19 @@ class IsingMetric:
         self.metric_ = None
 
     def run(self, detection_map):
+        """Do the calculation"""
         # h_term = number of positive pixels
         h_term = np.sum(detection_map == 1)
-        sx = detection_map.shape[0]
-        sy = detection_map.shape[1]
+        s_x = detection_map.shape[0]
+        s_y = detection_map.shape[1]
         l_term = 0
-        for x in range(1, sx - 1):
-            for y in range(1, sy - 1):
-                v = pow(detection_map[x, y] - detection_map[x - 1, y], 2) + \
-                    pow(detection_map[x, y] - detection_map[x, y - 1], 2) + \
-                    pow(detection_map[x, y] - detection_map[x, y + 1], 2) + \
-                    pow(detection_map[x, y] - detection_map[x - 1, y], 2)
-                l_term += v
-        #self.metric_ =  math.exp(-h_term-self.weight*l_term)
-        self.metric_ = math.exp((-h_term - self.weight * l_term) / detection_map.size)
+        for x in range(1, s_x - 1):
+            for y in range(1, s_y - 1):
+                tmp = pow(detection_map[x, y] - detection_map[x - 1, y], 2) + \
+                      pow(detection_map[x, y] - detection_map[x, y - 1], 2) + \
+                      pow(detection_map[x, y] - detection_map[x, y + 1], 2) + \
+                      pow(detection_map[x, y] - detection_map[x - 1, y], 2)
+                l_term += tmp
+        self.metric_ = math.exp((-h_term - self.weight * l_term) /
+                                detection_map.size)
         return self.metric_

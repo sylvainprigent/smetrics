@@ -1,3 +1,9 @@
+"""Data module
+
+This module contains methods to easy access sample data provided with the
+library
+
+"""
 import os.path as osp
 import os
 
@@ -29,8 +35,7 @@ def _fetch(data_filename):
 
     if os.path.isfile(filepath):
         return filepath
-    else:
-        raise FileExistsError("Cannot find the file:", filepath)    
+    raise FileExistsError("Cannot find the file:", filepath)
 
 
 def _load(f):

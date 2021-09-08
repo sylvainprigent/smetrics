@@ -1,5 +1,14 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+"""Calculate the visual PSNR between two images.
+
+Classes
+-------
+VPSNR
+
+"""
+
 import math
+import numpy as np
 
 
 class VPSNR:
@@ -34,12 +43,13 @@ class VPSNR:
         self.metric_ = None
 
     def run(self):
-        nl = self.image1.shape[0]
-        nc = self.image1.shape[1]
-        self.error_map_ = np.zeros((nl, nc))
+        """Do the calculation"""
+        n_l = self.image1.shape[0]
+        n_c = self.image1.shape[1]
+        self.error_map_ = np.zeros((n_l, n_c))
 
-        for x in range(self.patch_radius, nl-self.patch_radius):
-            for y in range(self.patch_radius, nc-self.patch_radius):
+        for x in range(self.patch_radius, n_l-self.patch_radius):
+            for y in range(self.patch_radius, n_c-self.patch_radius):
                 b_x = self.image1[x-self.patch_radius:x+self.patch_radius,
                                   y-self.patch_radius:y+self.patch_radius]
                 b_y = self.image2[x - self.patch_radius:x + self.patch_radius,
@@ -51,7 +61,3 @@ class VPSNR:
 
         range_ = np.amax(self.image1) - np.amin(self.image1)
         self.metric_ = 10*math.log10(range_*range_ / np.mean(self.error_map_))
-
-
-
-

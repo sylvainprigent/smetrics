@@ -1,12 +1,20 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+"""Calculate Statistical Parametric Mapping between two images.
+
+Classes
+-------
+SPM
+
+"""
+
 import math
+import numpy as np
 from skimage import measure
-import skimage.filters as filters
-import matplotlib.pyplot as plt
+from skimage import filters
 
 
 class SPM:
-    """Calculate the mean squared error between two images
+    """Calculate the Statistical Parametric Mapping between two images
 
     Parameters
     ----------
@@ -40,6 +48,14 @@ class SPM:
         self.detection_map_ = None
 
     def run_error(self, error_map):
+        """Calculate two sided SPM on the error map
+
+        Parameters
+        ----------
+        error_map = ndarray
+            Error map between two images
+
+        """
         inference_map, level_map, detection_map = \
             self._inference_map(error_map)
         inference_map_neg, level_map_neg, detection_map_neg = \
@@ -51,6 +67,7 @@ class SPM:
         self.detection_map_ = np.maximum(detection_map, detection_map_neg)
 
     def run(self):
+        """Do the calculation"""
         self.error_map_ = self.image2 - self.image1
         if self.sigma > 0:
             data = filters.gaussian(self.error_map_, sigma=self.sigma)
@@ -83,40 +100,31 @@ class SPM:
             Detection map (threshold of inference map at 0.05)
         """
         # Parameters
-        nl = input_image.shape[0]
-        nc = input_image.shape[1]
+        n_l = input_image.shape[0]
+        n_c = input_image.shape[1]
         coeff = self._field_roughness(input_image)
 
         print('field coeff=', coeff)
 
         # Compute p - value(pick and spatial extent)
-        p_values_image = np.zeros((nl, nc, len(self.thresholds)))
+        p_values_image = np.zeros((n_l, n_c, len(self.thresholds)))
         idx = -1
-        for t in self.thresholds:
+        for threshold in self.thresholds:
             idx += 1
             p_values_image[:, :, idx] = self._field_properties_at_t(input_image,
-                                                                    t, coeff)
+                                                                    threshold,
+                                                                    coeff)
 
-        inference_map = np.ones((nl, nc))
-        for m in range(nl):
-            for n in range(nc):
+        inference_map = np.ones((n_l, n_c))
+        for m in range(n_l):
+            for n in range(n_c):
                 for nth in range(len(self.thresholds)):
                     if p_values_image[m, n, nth] >= 0:
                         inference_map[m, n] = p_values_image[m, n, nth]
 
         # Threshold the field
-        detection_map = np.zeros((nl, nc))
+        detection_map = np.zeros((n_l, n_c))
         detection_map[inference_map < self.alpha] = 1
-
-        #threshold_field = np.zeros((nl, nc))
-        #detection_map = np.ones((nl, nc))
-        #p_value_image_no_neg = p_values_image
-        #p_value_image_no_neg[p_values_image < 0] = 1  # set negative to one
-        #for m in range(nl):
-        #    for n in range(nc):
-        #        threshold_field[m, n] = np.amin(p_value_image_no_neg[m, n, :])
-        #        if threshold_field[m, n] < alpha:
-        #            detection_map[m, n] = 0
 
         # level map for visualization
         level_map = self._level_map_calc(input_image)
@@ -141,18 +149,18 @@ class SPM:
             Roughness coefficient multiplied by power(2 * pi, 3 / 2)
 
         """
-        nl = field_image.shape[0]
-        nc = field_image.shape[1]
+        n_l = field_image.shape[0]
+        n_c = field_image.shape[1]
         grad_x = np.gradient(field_image, axis=0)
         grad_y = np.gradient(field_image, axis=1)
 
-        fx = grad_x.reshape((1, nl * nc))
-        fy = grad_y.reshape((1, nl * nc))
+        f_x = grad_x.reshape((1, n_l * n_c))
+        f_y = grad_y.reshape((1, n_l * n_c))
 
-        det_val = np.linalg.det(np.cov(fx, fy))
+        det_val = np.linalg.det(np.cov(f_x, f_y))
         return pow(2 * math.pi, -3 / 2) * pow(det_val, 0.5)
 
-    def _field_properties_at_t(self, field_image, t, coeff):
+    def _field_properties_at_t(self, field_image, threshold, coeff):
         """calculate intensity and surface p-value
 
         Compute the field p-value map for a given threshold t with the method
@@ -162,72 +170,93 @@ class SPM:
         ----------
         field_image: array (2D)
             Input Gaussian field
-        t: float
+        threshold: float
             Threshold value
         coeff: float
             Roughness coefficient of the field
 
         """
         # 1 - parameters
-        nl = field_image.shape[0]
-        nc = field_image.shape[1]
+        n_l = field_image.shape[0]
+        n_c = field_image.shape[1]
 
         # 2 - threshold the field
-        th = np.zeros((nl, nc))
-        th[field_image > t] = 1
+        t_h = np.zeros((n_l, n_c))
+        t_h[field_image > threshold] = 1
 
         # 3 - Get clusters
-        clusters, num_clusters = measure.label(th, background=0,
+        clusters, num_clusters = measure.label(t_h, background=0,
                                                return_num=True)
 
         print('num clusters:', num_clusters)
 
         # 4 - compute surface and max of each cluster
-        x0 = np.zeros((num_clusters, 1))
-        S0 = np.zeros((num_clusters, 1))
-        for m in range(nl):
-            for n in range(nc):
-                for p in range(1, num_clusters+1):
-                    if clusters[m, n] == p:
-                        S0[p-1] = S0[p-1] + 1
-                        if field_image[m, n] > x0[p-1]:
-                            x0[p-1] = field_image[m, n]
+        x_0 = np.zeros((num_clusters, 1))
+        s_0 = np.zeros((num_clusters, 1))
+        for m in range(n_l):
+            for n in range(n_c):
+                for cluster in range(1, num_clusters+1):
+                    if clusters[m, n] == cluster:
+                        s_0[cluster-1] = s_0[cluster-1] + 1
+                        if field_image[m, n] > x_0[cluster-1]:
+                            x_0[cluster-1] = field_image[m, n]
 
         # 5 - compute p_value of each cluster
         p_value = np.zeros((num_clusters, 1))
 
         if self.stat_type == 'H':
-            for c in range(1, num_clusters+1):
-                p_value[c-1] = (x0[c-1] / t) * math.exp((t * t - x0[c-1] * x0[c-1]) / 2)
+            for cluster in range(1, num_clusters+1):
+                p_value[cluster-1] = (x_0[cluster-1] / threshold) * \
+                                     math.exp((threshold * threshold -
+                                               x_0[cluster-1] *
+                                              x_0[cluster-1]) / 2)
         elif self.stat_type == 'S':
-            for c in range(1, num_clusters+1):
-                p_value[c-1] = math.exp(-((coeff * S0[c-1] * t * math.exp(-t * t / 2)) / (self._phi(t))))
+            for cluster in range(1, num_clusters+1):
+                p_value[cluster-1] = math.exp(-((coeff * s_0[cluster-1] *
+                                                 threshold *
+                                              math.exp(-threshold *
+                                                       threshold / 2))
+                                              / (self._phi(threshold))))
         elif self.stat_type == 'minHS':
-            for c in range(1, num_clusters+1):
-                p_h = (x0[c-1] / t) * math.exp((t * t - x0[c-1] * x0[c-1]) / 2)
-                p_s = math.exp(-((coeff * S0[c-1] * t * math.exp(-t * t / 2)) / (self._phi(t))))
-                p_value[c-1] = min(p_h, p_s)
+            for cluster in range(1, num_clusters+1):
+                p_h = (x_0[cluster-1] / threshold) * math.exp((threshold *
+                                                              threshold -
+                                                              x_0[cluster-1] *
+                                                              x_0[cluster-1]) /
+                                                              2)
+                p_s = math.exp(-((coeff * s_0[cluster-1] * threshold *
+                                  math.exp(-threshold * threshold / 2)) /
+                                 (self._phi(threshold))))
+                p_value[cluster-1] = min(p_h, p_s)
         else:
             raise Exception('enter a valid statistic type for SPM')
 
         # 6 - replace the p_values in the image
-        p_values_image = -np.ones((nl, nc))
-        for m in range(nl):
-            for n in range(nc):
-                for c in range(1, num_clusters+1):
-                    if clusters[m, n] == c:
-                        p_values_image[m, n] = p_value[c-1]
+        p_values_image = -np.ones((n_l, n_c))
+        for m in range(n_l):
+            for n in range(n_c):
+                for cluster in range(1, num_clusters+1):
+                    if clusters[m, n] == cluster:
+                        p_values_image[m, n] = p_value[cluster-1]
 
         return p_values_image
 
     @staticmethod
-    def _phi(t):
-        return 0.5 * (1 + math.erf(t / math.sqrt(2)))
+    def _phi(x):
+        """Phi function
+
+        Parameters
+        ----------
+        x: float
+            abscissa
+
+        """
+        return 0.5 * (1 + math.erf(x / math.sqrt(2)))
 
     def _level_map_calc(self, field_image):
-        nl = field_image.shape[0]
-        nc = field_image.shape[1]
-        level_map = np.zeros((nl, nc))
-        for t in self.thresholds:
-            level_map[field_image > t] = t
+        n_l = field_image.shape[0]
+        n_c = field_image.shape[1]
+        level_map = np.zeros((n_l, n_c))
+        for threshold in self.thresholds:
+            level_map[field_image > threshold] = threshold
         return level_map

@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""Module that contains the image quality metrics.
+
+"""
+
 from .mse import MSE, mse, NRMSE, nrmse
 from .psnr import PSNR, psnr
 from .fc import FRC, FSC
@@ -34,4 +39,3 @@ __all__ = ['MSE',
            'AreaPerimeterMetric',
            'PercentageAreaMetric',
            'IsingMetric']
-

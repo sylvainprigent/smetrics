@@ -1,12 +1,29 @@
+"""Metrics implementation.
+
+Implementation of the image quality metrics. Each metric should respect the
+following API
+
+   metric = MyMetric(param1, param2, ...)
+   value = metric.run()
+"""
+
 import sys
 import os
-
+from numpy.distutils.misc_util import Configuration
 from smetrics._build_utils import cythonize_extensions
 
 
 def configuration(parent_package='', top_path=None):
-    from numpy.distutils.misc_util import Configuration
-    import numpy
+    """Configure the package
+
+    Parameters
+    ----------
+    parent_package: str
+        name of the parent package
+    top_path: str
+        Top path for cython
+
+    """
 
     libraries = []
     if os.name == 'posix':

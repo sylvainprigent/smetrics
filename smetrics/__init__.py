@@ -12,6 +12,7 @@ import sys
 import logging
 import os
 import random
+import numpy as np
 
 
 from ._config import get_config, set_config, config_context
@@ -79,13 +80,11 @@ else:
     #from .base import clone
     #from .utils._show_versions import show_versions
 
-    __all__ = ['denoise']
+    __all__ = ['metrics']
 
 
-def setup_module(module):
+def setup_module():
     """Fixture for the tests to assure globally controllable seeding of RNGs"""
-
-    import numpy as np
 
     # Check if a random seed exists in the environment, if not create one.
     _random_seed = os.environ.get('smetrics_SEED', None)

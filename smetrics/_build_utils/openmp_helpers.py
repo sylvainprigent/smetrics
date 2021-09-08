@@ -40,8 +40,9 @@ def get_openmp_flag(compiler):
         # export LDFLAGS="$LDFLAGS -Wl,-rpath,/usr/local/opt/libomp/lib
         #                          -L/usr/local/opt/libomp/lib -lomp"
         return []
-    # Default flag for GCC and clang:
-    return ['-fopenmp']
+    else:
+        # Default flag for GCC and clang:
+        return ['-fopenmp']
 
 
 def check_openmp_support():
@@ -83,8 +84,7 @@ def check_openmp_support():
     if not openmp_supported:
         if os.getenv("smetrics_FAIL_NO_OPENMP"):
             raise CompileError("Failed to build with OpenMP")
-        else:
-            message = textwrap.dedent(
+        message = textwrap.dedent(
                 """
 
                                 ***********
@@ -109,6 +109,6 @@ def check_openmp_support():
 
                                     ***
                 """)
-            warnings.warn(message)
+        warnings.warn(message)
 
     return openmp_supported

@@ -73,6 +73,7 @@ class NRMSE:
         self.metric_ = None
 
     def run(self):
+        """Do the calculation"""
         normalization = self.norm.lower()
         if normalization == 'euclidean':
             denom = np.sqrt(

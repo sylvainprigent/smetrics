@@ -1,7 +1,7 @@
 """Global configuration state and functions for management
 """
 import os
-from contextlib import contextmanager as contextmanager
+from contextlib import contextmanager
 
 _global_config = {
     'assume_finite': bool(os.environ.get('SMETRICS_ASSUME_FINITE', False)),

@@ -1,10 +1,12 @@
+"""Setup the module to check the build environment"""
 # Author: Virgile Fritsch <virgile.fritsch@inria.fr>
 # License: BSD 3 clause
 
-import numpy
+from numpy.distutils.core import setup
 
 
 def configuration(parent_package='', top_path=None):
+    """Configuration of the module"""
     from numpy.distutils.misc_util import Configuration
     config = Configuration('__check_build', parent_package, top_path)
     #config.add_extension('_check_build',
@@ -15,5 +17,4 @@ def configuration(parent_package='', top_path=None):
 
 
 if __name__ == '__main__':
-    from numpy.distutils.core import setup
     setup(**configuration(top_path='').todict())
